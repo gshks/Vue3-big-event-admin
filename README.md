@@ -40,3 +40,11 @@ pnpm lint
 1.首先配置：.eslintrc.cjs\
 
 2.git、husky初始化,提交代码前判断是否有错
+
+3.目录调整:文件增加删除、内容的调整
+
+4.引入element-plus,去官网看指南下载:-D unplugin-vue-components unplugin-auto-import
+
+5.架构pinia
+
+6.pnpm add axios
