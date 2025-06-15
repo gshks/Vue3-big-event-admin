@@ -8,17 +8,23 @@ import {
   EditPen,
   SwitchButton,
   CaretBottom,
+  Moon,
+  Sunny,
 } from '@element-plus/icons-vue'
 import avatar from '@/assets/default.png'
 import { useUserStore } from '@/stores'
+import { useThemeStore } from '@/stores/modules/theme'
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
+
 const userStore = useUserStore()
+const themeStore = useThemeStore()
 const router = useRouter()
 
 onMounted(() => {
   userStore.getUser()
+  themeStore.initTheme()
 })
 
 const handleCommand = async (key) => {
@@ -39,10 +45,15 @@ const handleCommand = async (key) => {
     router.push(`/user/${key}`)
   }
 }
+
+// 主题切换处理
+const handleThemeToggle = () => {
+  themeStore.toggleTheme()
+}
 </script>
 
 <template>
-  <!-- 
+  <!--
     el-menu 整个菜单组件
       :default-active="$route.path"  配置默认高亮的菜单项
       router  router选项开启，el-menu-item 的 index 就是点击跳转的路径
@@ -54,10 +65,10 @@ const handleCommand = async (key) => {
     <el-aside width="200px">
       <div class="el-aside__logo"></div>
       <el-menu
-        active-text-color="#ffd04b"
-        background-color="#232323"
+        :active-text-color="themeStore.theme === 'dark' ? '#ffd04b' : '#409eff'"
+        :background-color="themeStore.theme === 'dark' ? '#1a1a1a' : '#232323'"
         :default-active="$route.path"
-        text-color="#fff"
+        :text-color="themeStore.theme === 'dark' ? '#e4e6ea' : '#fff'"
         router
       >
         <el-menu-item index="/article/channel">
@@ -94,26 +105,43 @@ const handleCommand = async (key) => {
     </el-aside>
     <el-container>
       <el-header>
-        <div>
+        <div class="header-left">
           黑马程序员：<strong>{{ userStore.user.nickname || userStore.user.username }}</strong>
         </div>
-        <el-dropdown placement="bottom-end" @command="handleCommand">
-          <!-- 展示给用户，默认看到的 -->
-          <span class="el-dropdown__box">
-            <el-avatar :src="userStore.user.user_pic || avatar" />
-            <el-icon><CaretBottom /></el-icon>
-          </span>
+        <div class="header-right">
+          <!-- 主题切换按钮 -->
+          <el-tooltip
+            :content="themeStore.theme === 'light' ? '切换到暗色模式' : '切换到亮色模式'"
+            placement="bottom"
+          >
+            <el-button
+              :icon="themeStore.theme === 'dark' ? Moon : Sunny"
+              circle
+              size="small"
+              @click="handleThemeToggle"
+              class="theme-toggle-btn"
+            />
+          </el-tooltip>
 
-          <!-- 折叠的下拉部分 -->
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="profile" :icon="User">基本资料</el-dropdown-item>
-              <el-dropdown-item command="avatar" :icon="Crop">更换头像</el-dropdown-item>
-              <el-dropdown-item command="password" :icon="EditPen">重置密码</el-dropdown-item>
-              <el-dropdown-item command="logout" :icon="SwitchButton">退出登录</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+          <!-- 用户下拉菜单 -->
+          <el-dropdown placement="bottom-end" @command="handleCommand">
+            <!-- 展示给用户，默认看到的 -->
+            <span class="el-dropdown__box">
+              <el-avatar :src="userStore.user.user_pic || avatar" />
+              <el-icon><CaretBottom /></el-icon>
+            </span>
+
+            <!-- 折叠的下拉部分 -->
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="profile" :icon="User">基本资料</el-dropdown-item>
+                <el-dropdown-item command="avatar" :icon="Crop">更换头像</el-dropdown-item>
+                <el-dropdown-item command="password" :icon="EditPen">重置密码</el-dropdown-item>
+                <el-dropdown-item command="logout" :icon="SwitchButton">退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
       </el-header>
       <el-main>
         <router-view></router-view>
@@ -126,41 +154,83 @@ const handleCommand = async (key) => {
 <style lang="scss" scoped>
 .layout-container {
   height: 100vh;
+  transition: var(--theme-transition);
+
   .el-aside {
-    background-color: #232323;
+    background-color: var(--aside-bg-color);
+    transition: var(--theme-transition);
+
     &__logo {
       height: 120px;
       background: url('@/assets/logo.png') no-repeat center / 120px auto;
+      transition: var(--theme-transition);
     }
+
     .el-menu {
       border-right: none;
+      transition: var(--theme-transition);
     }
   }
+
   .el-header {
-    background-color: #fff;
+    background-color: var(--header-bg-color);
+    border-bottom: 1px solid var(--header-border-color);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    .el-dropdown__box {
+    transition: var(--theme-transition);
+    color: var(--header-text-color);
+
+    .header-left {
+      color: var(--text-color-primary);
+      transition: var(--theme-transition);
+    }
+
+    .header-right {
       display: flex;
       align-items: center;
-      .el-icon {
-        color: #999;
-        margin-left: 10px;
+      gap: 16px;
+
+      .theme-toggle-btn {
+        transition: var(--theme-transition);
+
+        &:hover {
+          transform: scale(1.1);
+        }
       }
 
-      &:active,
-      &:focus {
-        outline: none;
+      .el-dropdown__box {
+        display: flex;
+        align-items: center;
+
+        .el-icon {
+          color: var(--text-color-secondary);
+          margin-left: 10px;
+          transition: var(--theme-transition);
+        }
+
+        &:active,
+        &:focus {
+          outline: none;
+        }
       }
     }
   }
+
+  .el-main {
+    background-color: var(--main-bg-color);
+    transition: var(--theme-transition);
+  }
+
   .el-footer {
+    background-color: var(--header-bg-color);
+    border-top: 1px solid var(--header-border-color);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 14px;
-    color: #666;
+    color: var(--text-color-secondary);
+    transition: var(--theme-transition);
   }
 }
 </style>

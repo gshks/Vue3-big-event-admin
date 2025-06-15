@@ -1,0 +1,167 @@
+// 主题变量定义
+:root {
+  // 亮色主题
+  --bg-color: #ffffff;
+  --bg-color-secondary: #f5f5f5;
+  --text-color-primary: #303133;
+  --text-color-regular: #606266;
+  --text-color-secondary: #909399;
+  --text-color-placeholder: #a8abb2;
+  --border-color: #dcdfe6;
+  --border-color-light: #e4e7ed;
+  --border-color-lighter: #ebeef5;
+  --border-color-extra-light: #f2f6fc;
+  
+  // 侧边栏主题
+  --aside-bg-color: #232323;
+  --aside-text-color: #ffffff;
+  --aside-active-color: #ffd04b;
+  
+  // 头部主题
+  --header-bg-color: #ffffff;
+  --header-text-color: #303133;
+  --header-border-color: #dcdfe6;
+  
+  // 主内容区域
+  --main-bg-color: #f5f5f5;
+  --card-bg-color: #ffffff;
+  --card-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  
+  // 按钮主题
+  --button-primary-bg: #409eff;
+  --button-primary-hover: #66b1ff;
+  --button-primary-active: #3a8ee6;
+  
+  // 过渡动画
+  --theme-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+// 暗色主题
+[data-theme='dark'] {
+  --bg-color: #1d1e1f;
+  --bg-color-secondary: #252526;
+  --text-color-primary: #e4e6ea;
+  --text-color-regular: #cfd3dc;
+  --text-color-secondary: #a3a6ad;
+  --text-color-placeholder: #6c6e72;
+  --border-color: #414243;
+  --border-color-light: #363637;
+  --border-color-lighter: #2b2b2c;
+  --border-color-extra-light: #252526;
+  
+  // 侧边栏暗色主题
+  --aside-bg-color: #1a1a1a;
+  --aside-text-color: #e4e6ea;
+  --aside-active-color: #ffd04b;
+  
+  // 头部暗色主题
+  --header-bg-color: #252526;
+  --header-text-color: #e4e6ea;
+  --header-border-color: #414243;
+  
+  // 主内容区域暗色
+  --main-bg-color: #1d1e1f;
+  --card-bg-color: #252526;
+  --card-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.3);
+  
+  // 按钮暗色主题
+  --button-primary-bg: #409eff;
+  --button-primary-hover: #66b1ff;
+  --button-primary-active: #3a8ee6;
+}
+
+// 全局基础样式应用主题变量
+body {
+  background-color: var(--main-bg-color);
+  color: var(--text-color-primary);
+  transition: var(--theme-transition);
+}
+
+// Element Plus 组件主题覆盖
+.el-card {
+  background-color: var(--card-bg-color) !important;
+  border-color: var(--border-color) !important;
+  box-shadow: var(--card-shadow) !important;
+  
+  .el-card__body {
+    color: var(--text-color-primary) !important;
+  }
+}
+
+.el-table {
+  background-color: var(--card-bg-color) !important;
+  color: var(--text-color-primary) !important;
+  
+  th.el-table__cell {
+    background-color: var(--bg-color-secondary) !important;
+    color: var(--text-color-primary) !important;
+    border-color: var(--border-color) !important;
+  }
+  
+  td.el-table__cell {
+    background-color: var(--card-bg-color) !important;
+    color: var(--text-color-regular) !important;
+    border-color: var(--border-color-light) !important;
+  }
+}
+
+.el-dialog {
+  background-color: var(--card-bg-color) !important;
+  border: 1px solid var(--border-color) !important;
+  
+  .el-dialog__header {
+    background-color: var(--card-bg-color) !important;
+    border-bottom: 1px solid var(--border-color-light) !important;
+    
+    .el-dialog__title {
+      color: var(--text-color-primary) !important;
+    }
+  }
+  
+  .el-dialog__body {
+    background-color: var(--card-bg-color) !important;
+    color: var(--text-color-regular) !important;
+  }
+}
+
+.el-form-item__label {
+  color: var(--text-color-primary) !important;
+}
+
+.el-input__inner {
+  background-color: var(--bg-color) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-color-primary) !important;
+  
+  &::placeholder {
+    color: var(--text-color-placeholder) !important;
+  }
+}
+
+.el-textarea__inner {
+  background-color: var(--bg-color) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-color-primary) !important;
+  
+  &::placeholder {
+    color: var(--text-color-placeholder) !important;
+  }
+}
+
+.el-select-dropdown {
+  background-color: var(--card-bg-color) !important;
+  border-color: var(--border-color) !important;
+  
+  .el-select-dropdown__item {
+    color: var(--text-color-regular) !important;
+    
+    &:hover {
+      background-color: var(--bg-color-secondary) !important;
+    }
+  }
+}
+
+// 过渡动画
+* {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}

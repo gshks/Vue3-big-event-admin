@@ -12,3 +12,6 @@ export * from './modules/counter'
 // export { useUserStore }
 // import { useCountStore } from './modules/counter'
 // export { useCountStore }
+// 统一导出所有的 store
+export * from './modules/user'
+export * from './modules/theme'
