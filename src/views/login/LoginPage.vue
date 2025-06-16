@@ -106,6 +106,7 @@ watch(isRegister, () => {
             :prefix-icon="Lock"
             type="password"
             :placeholder="t('login.rules.password')"
+            show-password
           ></el-input>
         </el-form-item>
         <el-form-item prop="repassword">
@@ -114,6 +115,7 @@ watch(isRegister, () => {
             :prefix-icon="Lock"
             type="password"
             :placeholder="t('login.rules.repassword')"
+            show-password
           ></el-input>
         </el-form-item>
         <el-form-item>
@@ -147,6 +149,7 @@ watch(isRegister, () => {
             :prefix-icon="Lock"
             type="password"
             :placeholder="t('login.rules.password')"
+            show-password
           ></el-input>
         </el-form-item>
         <el-form-item class="flex">

@@ -35,10 +35,22 @@ const handleCommand = (command) => {
   cursor: pointer;
   display: flex;
   align-items: center;
+  padding: 8px 12px;
+  border: 1px solid var(--el-border-color);
+  border-radius: var(--el-border-radius-base);
   color: var(--el-text-color-primary);
+  transition: all 0.2s ease;
+  font-size: var(--el-font-size-base);
+  gap: 4px;
 }
 
 .language-switch:hover {
   color: var(--el-color-primary);
+  border-color: var(--el-color-primary-light-3);
+  background-color: var(--el-color-primary-light-9);
+}
+
+.language-switch .el-icon--right {
+  margin-left: 0;
 }
 </style>
