@@ -14,7 +14,7 @@ import {
 import avatar from '@/assets/default.png'
 import { useUserStore } from '@/stores'
 import { useThemeStore } from '@/stores/modules/theme'
-import { onMounted } from 'vue'
+import { onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 
@@ -22,9 +22,13 @@ const userStore = useUserStore()
 const themeStore = useThemeStore()
 const router = useRouter()
 
+// 在组件挂载时初始化主题
 onMounted(() => {
   userStore.getUser()
-  themeStore.initTheme()
+  // 确保主题初始化正确
+  nextTick(() => {
+    themeStore.initTheme()
+  })
 })
 
 const handleCommand = async (key) => {
@@ -48,27 +52,25 @@ const handleCommand = async (key) => {
 
 // 主题切换处理
 const handleThemeToggle = () => {
+  const currentTheme = typeof themeStore.theme === 'object' 
+    ? themeStore.theme.theme 
+    : themeStore.theme
+  
+  console.log('切换前主题:', currentTheme)
   themeStore.toggleTheme()
+  console.log('切换后主题:', themeStore.theme)
 }
 </script>
 
 <template>
-  <!--
-    el-menu 整个菜单组件
-      :default-active="$route.path"  配置默认高亮的菜单项
-      router  router选项开启，el-menu-item 的 index 就是点击跳转的路径
-
-    el-menu-item 菜单项
-      index="/article/channel" 配置的是访问的跳转路径，配合default-active的值，实现高亮
-  -->
   <el-container class="layout-container">
     <el-aside width="200px">
       <div class="el-aside__logo"></div>
       <el-menu
-        :active-text-color="themeStore.theme === 'dark' ? '#ffd04b' : '#409eff'"
-        :background-color="themeStore.theme === 'dark' ? '#1a1a1a' : '#232323'"
+        :active-text-color="(typeof themeStore.theme === 'object' ? themeStore.theme.theme : themeStore.theme) === 'dark' ? '#ffd04b' : '#409eff'"
+        :background-color="(typeof themeStore.theme === 'object' ? themeStore.theme.theme : themeStore.theme) === 'dark' ? '#1a1a1a' : '#232323'"
         :default-active="$route.path"
-        :text-color="themeStore.theme === 'dark' ? '#e4e6ea' : '#fff'"
+        :text-color="(typeof themeStore.theme === 'object' ? themeStore.theme.theme : themeStore.theme) === 'dark' ? '#e4e6ea' : '#fff'"
         router
       >
         <el-menu-item index="/article/channel">
@@ -81,13 +83,11 @@ const handleThemeToggle = () => {
         </el-menu-item>
 
         <el-sub-menu index="/user">
-          <!-- 多级菜单的标题 - 具名插槽 title -->
           <template #title>
             <el-icon><UserFilled /></el-icon>
             <span>个人中心</span>
           </template>
 
-          <!-- 展开的内容 - 默认插槽 -->
           <el-menu-item index="/user/profile">
             <el-icon><User /></el-icon>
             <span>基本资料</span>
@@ -111,11 +111,16 @@ const handleThemeToggle = () => {
         <div class="header-right">
           <!-- 主题切换按钮 -->
           <el-tooltip
-            :content="themeStore.theme === 'light' ? '切换到暗色模式' : '切换到亮色模式'"
+            :content="(typeof themeStore.theme === 'object' ? themeStore.theme.theme : themeStore.theme) === 'light' 
+              ? '切换到暗色模式' 
+              : '切换到亮色模式'"
             placement="bottom"
           >
             <el-button
-              :icon="themeStore.theme === 'dark' ? Moon : Sunny"
+              :icon="(typeof themeStore.theme === 'object' ? themeStore.theme.theme : themeStore.theme) === 'dark' 
+                ? Moon 
+                : Sunny"
+              link
               circle
               size="small"
               @click="handleThemeToggle"
@@ -125,13 +130,11 @@ const handleThemeToggle = () => {
 
           <!-- 用户下拉菜单 -->
           <el-dropdown placement="bottom-end" @command="handleCommand">
-            <!-- 展示给用户，默认看到的 -->
             <span class="el-dropdown__box">
               <el-avatar :src="userStore.user.user_pic || avatar" />
               <el-icon><CaretBottom /></el-icon>
             </span>
 
-            <!-- 折叠的下拉部分 -->
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="profile" :icon="User">基本资料</el-dropdown-item>
