@@ -5,7 +5,9 @@ import { ref, watch } from 'vue'
 import { useUserStore } from '@/stores'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const isRegister = ref(false)
 const form = ref()
 
@@ -18,31 +20,30 @@ const formModel = ref({
 
 const rules = {
   username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 5, max: 10, message: '用户名必须是 5-10位 的字符', trigger: 'blur' },
+    { required: true, message: t('login.rules.username'), trigger: 'blur' },
+    { min: 5, max: 10, message: t('login.rules.usernameLength'), trigger: 'blur' },
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
+    { required: true, message: t('login.rules.password'), trigger: 'blur' },
     {
       pattern: /^\S{6,15}$/,
-      message: '密码必须是 6-15位 的非空字符',
+      message: t('login.rules.passwordLength'),
       trigger: 'blur',
     },
   ],
   repassword: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
+    { required: true, message: t('login.rules.password'), trigger: 'blur' },
     {
       pattern: /^\S{6,15}$/,
-      message: '密码必须是 6-15位 的非空字符',
+      message: t('login.rules.passwordLength'),
       trigger: 'blur',
     },
     {
       validator: (rule, value, callback) => {
-        // 判断 value 和 当前 form 中收集的 password 是否一致
         if (value !== formModel.value.password) {
-          callback(new Error('两次输入密码不一致'))
+          callback(new Error(t('login.rules.passwordMismatch')))
         } else {
-          callback() // 就算校验成功，也需要callback
+          callback()
         }
       },
       trigger: 'blur',
@@ -51,10 +52,9 @@ const rules = {
 }
 
 const register = async () => {
-  // 注册成功之前，先进行校验，校验成功 → 请求，校验失败 → 自动提示
   await form.value.validate()
   await userRegisterService(formModel.value)
-  ElMessage.success('注册成功')
+  ElMessage.success(t('common.success'))
   isRegister.value = false
 }
 
@@ -64,11 +64,10 @@ const login = async () => {
   await form.value.validate()
   const res = await userLoginService(formModel.value)
   userStore.setToken(res.data.token)
-  ElMessage.success('登录成功')
+  ElMessage.success(t('common.success'))
   router.push('/')
 }
 
-// 切换的时候，重置表单内容
 watch(isRegister, () => {
   formModel.value = {
     username: '',
@@ -92,13 +91,13 @@ watch(isRegister, () => {
         v-if="isRegister"
       >
         <el-form-item>
-          <h1>注册</h1>
+          <h1>{{ t('login.register') }}</h1>
         </el-form-item>
         <el-form-item prop="username">
           <el-input
             v-model="formModel.username"
             :prefix-icon="User"
-            placeholder="请输入用户名"
+            :placeholder="t('login.rules.username')"
           ></el-input>
         </el-form-item>
         <el-form-item prop="password">
@@ -106,7 +105,7 @@ watch(isRegister, () => {
             v-model="formModel.password"
             :prefix-icon="Lock"
             type="password"
-            placeholder="请输入密码"
+            :placeholder="t('login.rules.password')"
           ></el-input>
         </el-form-item>
         <el-form-item prop="repassword">
@@ -114,29 +113,31 @@ watch(isRegister, () => {
             v-model="formModel.repassword"
             :prefix-icon="Lock"
             type="password"
-            placeholder="请输入再次密码"
+            :placeholder="t('login.rules.repassword')"
           ></el-input>
         </el-form-item>
         <el-form-item>
           <el-button @click="register" class="button" type="primary" auto-insert-space>
-            注册
+            {{ t('login.register') }}
           </el-button>
         </el-form-item>
         <el-form-item class="flex">
-          <el-link type="info" :underline="false" @click="isRegister = false"> ← 返回 </el-link>
+          <el-link type="info" :underline="false" @click="isRegister = false">
+            {{ t('login.back') }}
+          </el-link>
         </el-form-item>
       </el-form>
 
       <!-- 登录相关表单 -->
       <el-form :model="formModel" :rules="rules" ref="form" size="large" autocomplete="off" v-else>
         <el-form-item>
-          <h1>登录</h1>
+          <h1>{{ t('login.title') }}</h1>
         </el-form-item>
         <el-form-item prop="username">
           <el-input
             v-model="formModel.username"
             :prefix-icon="User"
-            placeholder="请输入用户名"
+            :placeholder="t('login.rules.username')"
           ></el-input>
         </el-form-item>
         <el-form-item prop="password">
@@ -145,20 +146,24 @@ watch(isRegister, () => {
             name="password"
             :prefix-icon="Lock"
             type="password"
-            placeholder="请输入密码"
+            :placeholder="t('login.rules.password')"
           ></el-input>
         </el-form-item>
         <el-form-item class="flex">
           <div class="flex">
-            <el-checkbox>记住我</el-checkbox>
-            <el-link type="primary" :underline="false">忘记密码？</el-link>
+            <el-checkbox>{{ t('login.remember') }}</el-checkbox>
+            <el-link type="primary" :underline="false">{{ t('login.forgot') }}</el-link>
           </div>
         </el-form-item>
         <el-form-item>
-          <el-button @click="login" class="button" type="primary" auto-insert-space>登录</el-button>
+          <el-button @click="login" class="button" type="primary" auto-insert-space>
+            {{ t('login.submit') }}
+          </el-button>
         </el-form-item>
         <el-form-item class="flex">
-          <el-link type="info" :underline="false" @click="isRegister = true"> 注册 → </el-link>
+          <el-link type="info" :underline="false" @click="isRegister = true">
+            {{ t('login.register') }}
+          </el-link>
         </el-form-item>
       </el-form>
     </el-col>

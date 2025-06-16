@@ -4,6 +4,9 @@ import { Plus, Upload } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores'
 import { userUpdateAvatarService } from '@/api/user'
 import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 const userStore = useUserStore()
 const imgUrl = ref(userStore.user.user_pic)
 const uploadRef = ref()
@@ -22,12 +25,12 @@ const onUpdateAvatar = async () => {
   // userStore 重新渲染
   await userStore.getUser()
   // 提示用户
-  ElMessage.success('头像更新成功')
+  ElMessage.success(t('userAvatar.updateSuccess'))
 }
 </script>
 
 <template>
-  <page-container title="更换头像">
+  <page-container :title="t('userAvatar.pageTitle')">
     <el-upload
       ref="uploadRef"
       :auto-upload="false"
@@ -46,11 +49,11 @@ const onUpdateAvatar = async () => {
       type="primary"
       :icon="Plus"
       size="large"
-      >选择图片</el-button
+      >{{ t('userAvatar.selectImage') }}</el-button
     >
-    <el-button @click="onUpdateAvatar" type="success" :icon="Upload" size="large"
-      >上传头像</el-button
-    >
+    <el-button @click="onUpdateAvatar" type="success" :icon="Upload" size="large">{{
+      t('userAvatar.uploadAvatar')
+    }}</el-button>
   </page-container>
 </template>
 

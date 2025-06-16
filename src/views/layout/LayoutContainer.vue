@@ -17,7 +17,10 @@ import { useThemeStore } from '@/stores/modules/theme'
 import { onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
+import LanguageSwitch from '@/components/LanguageSwitch.vue'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const userStore = useUserStore()
 const themeStore = useThemeStore()
 const router = useRouter()
@@ -34,10 +37,10 @@ onMounted(() => {
 const handleCommand = async (key) => {
   if (key === 'logout') {
     // 退出操作
-    await ElMessageBox.confirm('你确认要进行退出么', '温馨提示', {
+    await ElMessageBox.confirm(t('layout.logoutConfirm'), t('layout.logoutTitle'), {
       type: 'warning',
-      confirmButtonText: '确认',
-      cancelButtonText: '取消',
+      confirmButtonText: t('common.confirm'),
+      cancelButtonText: t('common.cancel'),
     })
 
     // 清除本地的数据 (token + user信息)
@@ -52,10 +55,9 @@ const handleCommand = async (key) => {
 
 // 主题切换处理
 const handleThemeToggle = () => {
-  const currentTheme = typeof themeStore.theme === 'object' 
-    ? themeStore.theme.theme 
-    : themeStore.theme
-  
+  const currentTheme =
+    typeof themeStore.theme === 'object' ? themeStore.theme.theme : themeStore.theme
+
   console.log('切换前主题:', currentTheme)
   themeStore.toggleTheme()
   console.log('切换后主题:', themeStore.theme)
@@ -67,38 +69,53 @@ const handleThemeToggle = () => {
     <el-aside width="200px">
       <div class="el-aside__logo"></div>
       <el-menu
-        :active-text-color="(typeof themeStore.theme === 'object' ? themeStore.theme.theme : themeStore.theme) === 'dark' ? '#ffd04b' : '#409eff'"
-        :background-color="(typeof themeStore.theme === 'object' ? themeStore.theme.theme : themeStore.theme) === 'dark' ? '#1a1a1a' : '#232323'"
+        :active-text-color="
+          (typeof themeStore.theme === 'object' ? themeStore.theme.theme : themeStore.theme) ===
+          'dark'
+            ? '#ffd04b'
+            : '#409eff'
+        "
+        :background-color="
+          (typeof themeStore.theme === 'object' ? themeStore.theme.theme : themeStore.theme) ===
+          'dark'
+            ? '#1a1a1a'
+            : '#232323'
+        "
         :default-active="$route.path"
-        :text-color="(typeof themeStore.theme === 'object' ? themeStore.theme.theme : themeStore.theme) === 'dark' ? '#e4e6ea' : '#fff'"
+        :text-color="
+          (typeof themeStore.theme === 'object' ? themeStore.theme.theme : themeStore.theme) ===
+          'dark'
+            ? '#e4e6ea'
+            : '#fff'
+        "
         router
       >
         <el-menu-item index="/article/channel">
           <el-icon><Management /></el-icon>
-          <span>文章分类</span>
+          <span>{{ t('menu.category') }}</span>
         </el-menu-item>
         <el-menu-item index="/article/manage">
           <el-icon><Promotion /></el-icon>
-          <span>文章管理</span>
+          <span>{{ t('menu.article') }}</span>
         </el-menu-item>
 
         <el-sub-menu index="/user">
           <template #title>
             <el-icon><UserFilled /></el-icon>
-            <span>个人中心</span>
+            <span>{{ t('menu.profile') }}</span>
           </template>
 
           <el-menu-item index="/user/profile">
             <el-icon><User /></el-icon>
-            <span>基本资料</span>
+            <span>{{ t('menu.basicInfo') }}</span>
           </el-menu-item>
           <el-menu-item index="/user/avatar">
             <el-icon><Crop /></el-icon>
-            <span>更换头像</span>
+            <span>{{ t('menu.avatar') }}</span>
           </el-menu-item>
           <el-menu-item index="/user/password">
             <el-icon><EditPen /></el-icon>
-            <span>重置密码</span>
+            <span>{{ t('menu.password') }}</span>
           </el-menu-item>
         </el-sub-menu>
       </el-menu>
@@ -106,20 +123,30 @@ const handleThemeToggle = () => {
     <el-container>
       <el-header>
         <div class="header-left">
-          黑马程序员：<strong>{{ userStore.user.nickname || userStore.user.username }}</strong>
+          {{ t('layout.company') }}：<strong>{{ userStore.user.nickname || userStore.user.username }}</strong>
         </div>
         <div class="header-right">
+          <!-- 语言切换组件 -->
+          <LanguageSwitch />
+
           <!-- 主题切换按钮 -->
           <el-tooltip
-            :content="(typeof themeStore.theme === 'object' ? themeStore.theme.theme : themeStore.theme) === 'light' 
-              ? '切换到暗色模式' 
-              : '切换到亮色模式'"
+            :content="
+              (typeof themeStore.theme === 'object' ? themeStore.theme.theme : themeStore.theme) ===
+              'light'
+                ? t('layout.switchToDark')
+                : t('layout.switchToLight')
+            "
             placement="bottom"
           >
             <el-button
-              :icon="(typeof themeStore.theme === 'object' ? themeStore.theme.theme : themeStore.theme) === 'dark' 
-                ? Moon 
-                : Sunny"
+              :icon="
+                (typeof themeStore.theme === 'object'
+                  ? themeStore.theme.theme
+                  : themeStore.theme) === 'dark'
+                  ? Moon
+                  : Sunny
+              "
               link
               circle
               size="small"
@@ -137,10 +164,10 @@ const handleThemeToggle = () => {
 
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="profile" :icon="User">基本资料</el-dropdown-item>
-                <el-dropdown-item command="avatar" :icon="Crop">更换头像</el-dropdown-item>
-                <el-dropdown-item command="password" :icon="EditPen">重置密码</el-dropdown-item>
-                <el-dropdown-item command="logout" :icon="SwitchButton">退出登录</el-dropdown-item>
+                <el-dropdown-item command="profile" :icon="User">{{ t('menu.basicInfo') }}</el-dropdown-item>
+                <el-dropdown-item command="avatar" :icon="Crop">{{ t('menu.avatar') }}</el-dropdown-item>
+                <el-dropdown-item command="password" :icon="EditPen">{{ t('menu.password') }}</el-dropdown-item>
+                <el-dropdown-item command="logout" :icon="SwitchButton">{{ t('common.logout') }}</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -149,7 +176,7 @@ const handleThemeToggle = () => {
       <el-main>
         <router-view></router-view>
       </el-main>
-      <el-footer>大事件 ©2023 Created by 黑马程序员</el-footer>
+      <el-footer>{{ t('layout.footer') }}</el-footer>
     </el-container>
   </el-container>
 </template>

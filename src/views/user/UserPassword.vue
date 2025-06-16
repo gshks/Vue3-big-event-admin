@@ -3,37 +3,37 @@
     <el-card class="box-card">
       <template #header>
         <div class="card-header">
-          <span>重置密码</span>
+          <span>{{ t('userPassword.pageTitle') }}</span>
         </div>
       </template>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" status-icon>
-        <el-form-item label="当前密码" prop="oldPassword">
+        <el-form-item :label="t('userPassword.currentPassword')" prop="oldPassword">
           <el-input
             v-model="form.oldPassword"
             type="password"
-            placeholder="请输入当前密码"
+            :placeholder="t('userPassword.currentPassword')"
             show-password
           />
         </el-form-item>
-        <el-form-item label="新密码" prop="newPassword">
+        <el-form-item :label="t('userPassword.newPassword')" prop="newPassword">
           <el-input
             v-model="form.newPassword"
             type="password"
-            placeholder="请输入新密码"
+            :placeholder="t('userPassword.newPassword')"
             show-password
           />
         </el-form-item>
-        <el-form-item label="确认密码" prop="confirmPassword">
+        <el-form-item :label="t('userPassword.confirmPassword')" prop="confirmPassword">
           <el-input
             v-model="form.confirmPassword"
             type="password"
-            placeholder="请再次输入新密码"
+            :placeholder="t('userPassword.confirmPassword')"
             show-password
           />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="submitForm">确认修改</el-button>
-          <el-button @click="resetForm">重置</el-button>
+          <el-button type="primary" @click="submitForm">{{ t('userPassword.submitModify') }}</el-button>
+          <el-button @click="resetForm">{{ t('userPassword.reset') }}</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -46,7 +46,9 @@ import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores'
 import { userUpdatePasswordService } from '@/api/user'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const formRef = ref(null)
 const router = useRouter()
 const userStore = useUserStore()
@@ -59,7 +61,7 @@ const form = reactive({
 
 const validatePass = (rule, value, callback) => {
   if (value === '') {
-    callback(new Error('请输入密码'))
+    callback(new Error(t('userPassword.rules.passwordRequired')))
   } else {
     if (form.confirmPassword !== '') {
       formRef.value?.validateField('confirmPassword')
@@ -70,9 +72,9 @@ const validatePass = (rule, value, callback) => {
 
 const validatePass2 = (rule, value, callback) => {
   if (value === '') {
-    callback(new Error('请再次输入密码'))
+    callback(new Error(t('userPassword.rules.repasswordRequired')))
   } else if (value !== form.newPassword) {
-    callback(new Error('两次输入密码不一致!'))
+    callback(new Error(t('userPassword.rules.passwordMismatch')))
   } else {
     callback()
   }
@@ -80,12 +82,12 @@ const validatePass2 = (rule, value, callback) => {
 
 const rules = {
   oldPassword: [
-    { required: true, message: '请输入当前密码', trigger: 'blur' },
-    { min: 6, message: '密码长度不能小于6位', trigger: 'blur' },
+    { required: true, message: t('userPassword.rules.passwordRequired'), trigger: 'blur' },
+    { min: 6, message: t('userPassword.rules.passwordLength'), trigger: 'blur' },
   ],
   newPassword: [
     { required: true, validator: validatePass, trigger: 'blur' },
-    { min: 6, message: '密码长度不能小于6位', trigger: 'blur' },
+    { min: 6, message: t('userPassword.rules.passwordLength'), trigger: 'blur' },
   ],
   confirmPassword: [{ required: true, validator: validatePass2, trigger: 'blur' }],
 }
@@ -101,7 +103,7 @@ const submitForm = async () => {
           new_pwd: form.newPassword,
           re_pwd: form.confirmPassword,
         })
-        ElMessage.success('密码修改成功，请重新登录')
+        ElMessage.success(t('userPassword.rules.passwordModifySuccess'))
         userStore.removeToken()
         router.push('/login')
       } catch {
