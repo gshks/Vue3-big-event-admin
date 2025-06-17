@@ -2,9 +2,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { Edit, Delete, Search, Clock } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { artGetChannelsService, artDelChannelService } from '../../api/article'
 import ChannelEdit from './components/ChannelEdit.vue'
-import { useI18n } from 'vue-i18n'
+import ChannelListSkeleton from './components/ChannelListSkeleton.vue'
 
 const { t } = useI18n()
 const channelList = ref([])
@@ -15,18 +16,21 @@ const showSearchHistory = ref(false)
 const searchHistory = ref([])
 const searchInputRef = ref()
 
-// 搜索历史的本地存储键名
 const SEARCH_HISTORY_KEY = 'article_category_search_history'
-const MAX_HISTORY_COUNT = 10 // 最大历史记录数量
+const MAX_HISTORY_COUNT = 10
 
 const getChannelList = async () => {
   loading.value = true
-  const res = await artGetChannelsService()
-  channelList.value = res.data.data
-  loading.value = false
+  try {
+    const res = await artGetChannelsService()
+    channelList.value = res.data.data
+  } catch (error) {
+    ElMessage.error(t('common.fetchError'))
+  } finally {
+    loading.value = false
+  }
 }
 
-// 从本地存储加载搜索历史
 const loadSearchHistory = () => {
   try {
     const history = localStorage.getItem(SEARCH_HISTORY_KEY)
@@ -39,7 +43,6 @@ const loadSearchHistory = () => {
   }
 }
 
-// 保存搜索历史到本地存储
 const saveSearchHistory = () => {
   try {
     localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(searchHistory.value))
@@ -48,32 +51,23 @@ const saveSearchHistory = () => {
   }
 }
 
-// 添加搜索记录
 const addToSearchHistory = (searchTerm) => {
   if (!searchTerm.trim()) return
-
-  // 移除重复项
   const filteredHistory = searchHistory.value.filter((item) => item !== searchTerm)
-
-  // 添加到开头
   searchHistory.value = [searchTerm, ...filteredHistory].slice(0, MAX_HISTORY_COUNT)
-
-  // 保存到本地存储
   saveSearchHistory()
 }
 
-// 清空搜索历史
 const clearSearchHistory = (event) => {
-  event.stopPropagation() // 阻止事件冒泡
+  event.stopPropagation()
   searchHistory.value = []
   saveSearchHistory()
   ElMessage.success(t('articleChannel.searchHistoryCleared'))
-  showSearchHistory.value = false // 清空后关闭历史栏
+  showSearchHistory.value = false
 }
 
-// 删除单个搜索历史记录
 const removeSearchHistoryItem = (index, event) => {
-  event.stopPropagation() // 阻止事件冒泡
+  event.stopPropagation()
   searchHistory.value.splice(index, 1)
   saveSearchHistory()
 }
@@ -83,7 +77,6 @@ onMounted(() => {
   loadSearchHistory()
 })
 
-// 计算过滤后的频道列表
 const filteredChannelList = computed(() => {
   if (!searchText.value) {
     return channelList.value
@@ -94,49 +87,40 @@ const filteredChannelList = computed(() => {
   )
 })
 
-// 处理搜索
 const handleSearch = () => {
   if (searchText.value.trim()) {
     addToSearchHistory(searchText.value.trim())
   }
   showSearchHistory.value = false
 
-  // 搜索后判断是否有结果
   if (searchText.value && filteredChannelList.value.length === 0) {
     ElMessage.info(t('articleChannel.noCategory'))
   }
 }
 
-// 搜索框获得焦点时显示搜索历史
 const onSearchFocus = () => {
   showSearchHistory.value = true
 }
 
-// 搜索框失去焦点时隐藏搜索历史
 const onSearchBlur = (event) => {
-  // 检查失焦的目标是否在搜索历史区域内
   const searchContainer = event.target.closest('.search-container')
   const relatedTarget = event.relatedTarget
 
-  // 如果点击的是搜索历史区域内的元素，不隐藏
   if (relatedTarget && searchContainer && searchContainer.contains(relatedTarget)) {
     return
   }
 
-  // 延迟隐藏，给点击历史记录留时间
   setTimeout(() => {
     showSearchHistory.value = false
   }, 150)
 }
 
-// 点击搜索历史记录
 const onHistoryItemClick = (historyItem) => {
   searchText.value = historyItem
   showSearchHistory.value = false
   handleSearch()
 }
 
-// 按回车键搜索
 const onSearchKeyup = (event) => {
   if (event.key === 'Enter') {
     handleSearch()
@@ -182,7 +166,7 @@ const onSuccess = () => {
               @focus="onSearchFocus"
               @blur="onSearchBlur"
               @keyup="onSearchKeyup"
-            ></el-input>
+            />
             <el-button
               type="primary"
               @click="handleSearch"
@@ -228,44 +212,50 @@ const onSuccess = () => {
           </div>
         </div>
 
-        <el-button @click="onAddChannel" style="margin-left: 10px" type="primary"
-          >{{ t('common.add') }}{{ t('menu.category') }}</el-button
-        >
+        <el-button @click="onAddChannel" style="margin-left: 10px" type="primary">
+          {{ t('common.add') }}{{ t('menu.category') }}
+        </el-button>
       </div>
     </template>
 
-    <el-table v-loading="loading" :data="filteredChannelList" style="width: 100%">
-      <el-table-column
-        type="index"
-        :label="t('articleChannel.serialNumber')"
-        width="100"
-      ></el-table-column>
-      <el-table-column prop="cate_name" :label="t('articleChannel.categoryName')"></el-table-column>
-      <el-table-column
-        prop="cate_alias"
-        :label="t('articleChannel.categoryAlias')"
-      ></el-table-column>
-      <el-table-column :label="t('articleChannel.operation')" width="150">
-        <template #default="{ row, $index }">
-          <el-button
-            :icon="Edit"
-            circle
-            plain
-            type="primary"
-            @click="onEditChannel(row, $index)"
-          ></el-button>
-          <el-button
-            :icon="Delete"
-            circle
-            plain
-            type="danger"
-            @click="onDelChannel(row, $index)"
-          ></el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <ChannelListSkeleton v-if="loading" />
+    <template v-else>
+      <el-table :data="filteredChannelList" style="width: 100%">
+        <el-table-column
+          type="index"
+          :label="t('articleChannel.serialNumber')"
+          width="100"
+        ></el-table-column>
+        <el-table-column
+          prop="cate_name"
+          :label="t('articleChannel.categoryName')"
+        ></el-table-column>
+        <el-table-column
+          prop="cate_alias"
+          :label="t('articleChannel.categoryAlias')"
+        ></el-table-column>
+        <el-table-column :label="t('articleChannel.operation')" width="150">
+          <template #default="{ row, $index }">
+            <el-button
+              :icon="Edit"
+              circle
+              plain
+              type="primary"
+              @click="onEditChannel(row, $index)"
+            ></el-button>
+            <el-button
+              :icon="Delete"
+              circle
+              plain
+              type="danger"
+              @click="onDelChannel(row, $index)"
+            ></el-button>
+          </template>
+        </el-table-column>
+      </el-table>
 
-    <channel-edit ref="dialog" @success="onSuccess"></channel-edit>
+      <channel-edit ref="dialog" @success="onSuccess"></channel-edit>
+    </template>
   </page-container>
 </template>
 
@@ -293,7 +283,7 @@ const onSuccess = () => {
 }
 
 .search-btn {
-  margin-left: 10px !important; // 确保覆盖 Element Plus 默认样式
+  margin-left: 10px !important;
 }
 
 .search-history-dropdown {
@@ -341,10 +331,10 @@ const onSuccess = () => {
   align-items: center;
   padding: 6px 12px;
   cursor: pointer;
-}
 
-.history-item:hover {
-  background-color: var(--el-fill-color-light);
+  &:hover {
+    background-color: var(--el-fill-color-light);
+  }
 }
 
 .history-text {
@@ -357,10 +347,10 @@ const onSuccess = () => {
 .delete-icon {
   margin-left: 10px;
   color: var(--el-text-color-secondary);
-  visibility: hidden; // 默认隐藏
+  visibility: hidden;
 }
 
 .history-item:hover .delete-icon {
-  visibility: visible; // 悬停时显示
+  visibility: visible;
 }
 </style>

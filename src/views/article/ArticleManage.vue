@@ -1,17 +1,18 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { Delete, Edit, Search, Clock } from '@element-plus/icons-vue'
-import ChannelSelect from './components/ChannelSelect.vue'
-import ArticleEdit from './components/ArticleEdit.vue'
-import { artGetListService, artDelService } from '@/api/article.js'
-import { formatTime } from '@/utils/format.js'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useI18n } from 'vue-i18n'
+import ChannelSelect from './components/ChannelSelect.vue'
+import ArticleEdit from './components/ArticleEdit.vue'
+import ArticleListSkeleton from './components/ArticleListSkeleton.vue'
+import { artGetListService, artDelService } from '@/api/article.js'
+import { formatTime } from '@/utils/format.js'
 
 const { t } = useI18n()
-const articleList = ref([]) // 文章列表
-const total = ref(0) // 总条数
-const loading = ref(false) // loading状态
+const articleList = ref([])
+const total = ref(0)
+const loading = ref(false)
 
 // 搜索相关
 const searchText = ref('')
@@ -32,10 +33,15 @@ const params = ref({
 
 const getArticleList = async () => {
   loading.value = true
-  const res = await artGetListService(params.value)
-  articleList.value = res.data.data
-  total.value = res.data.total
-  loading.value = false
+  try {
+    const res = await artGetListService(params.value)
+    articleList.value = res.data.data
+    total.value = res.data.total
+  } catch (error) {
+    ElMessage.error(t('common.fetchError'))
+  } finally {
+    loading.value = false
+  }
 }
 
 onMounted(() => {
@@ -60,23 +66,26 @@ const loadSearchHistory = () => {
     const history = localStorage.getItem(SEARCH_HISTORY_KEY)
     if (history) searchHistory.value = JSON.parse(history)
   } catch (error) {
-    console.error('加载搜索历史失败:', error) // Fix: Log the error
+    console.error('加载搜索历史失败:', error)
     searchHistory.value = []
   }
 }
+
 const saveSearchHistory = () => {
   try {
     localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(searchHistory.value))
   } catch (error) {
-    console.error('保存搜索历史失败:', error) // Fix: Log the error
+    console.error('保存搜索历史失败:', error)
   }
 }
+
 const addToSearchHistory = (term) => {
   if (!term.trim()) return
   const filtered = searchHistory.value.filter((item) => item !== term)
   searchHistory.value = [term, ...filtered].slice(0, MAX_HISTORY_COUNT)
   saveSearchHistory()
 }
+
 const clearSearchHistory = (event) => {
   event && event.stopPropagation()
   searchHistory.value = []
@@ -84,6 +93,7 @@ const clearSearchHistory = (event) => {
   ElMessage.success(t('articleChannel.searchHistoryCleared'))
   showSearchHistory.value = false
 }
+
 const removeSearchHistoryItem = (index, event) => {
   event && event.stopPropagation()
   searchHistory.value.splice(index, 1)
@@ -98,6 +108,7 @@ const filteredArticleList = computed(() => {
       article.title?.includes(searchText.value) || article.cate_name?.includes(searchText.value)
   )
 })
+
 const handleSearch = () => {
   if (searchText.value.trim()) addToSearchHistory(searchText.value.trim())
   showSearchHistory.value = false
@@ -105,9 +116,11 @@ const handleSearch = () => {
     ElMessage.info(t('articleManage.noArticle'))
   }
 }
+
 const onSearchFocus = () => {
   showSearchHistory.value = true
 }
+
 const onSearchBlur = (event) => {
   const searchContainer = event.target.closest('.search-container')
   const relatedTarget = event.relatedTarget
@@ -116,11 +129,13 @@ const onSearchBlur = (event) => {
     showSearchHistory.value = false
   }, 150)
 }
+
 const onHistoryItemClick = (historyItem) => {
   searchText.value = historyItem
   showSearchHistory.value = false
   handleSearch()
 }
+
 const onSearchKeyup = (event) => {
   if (event.key === 'Enter') handleSearch()
 }
@@ -129,38 +144,47 @@ const onSearchKeyup = (event) => {
 const onSearch = () => {
   params.value.pagenum = 1
   getArticleList()
-  searchText.value = '' // 清空搜索框内容，确保只使用表单筛选
+  searchText.value = ''
 }
+
 const onReset = () => {
   params.value.pagenum = 1
   params.value.cate_id = ''
   params.value.state = ''
   getArticleList()
-  searchText.value = '' // 清空搜索框内容
+  searchText.value = ''
 }
 
 // 添加、编辑、删除逻辑
 const articleEditRef = ref()
+
 const onAddArticle = () => {
   articleEditRef.value.open({})
 }
+
 const onEditArticle = (row) => {
   articleEditRef.value.open(row)
 }
+
 const onDeleteArticle = async (row) => {
-  await ElMessageBox.confirm(t('articleManage.deleteConfirm'), t('articleManage.deleteTitle'), {
-    confirmButtonText: t('common.confirm'),
-    cancelButtonText: t('common.cancel'),
-    type: 'warning',
-  })
-  await artDelService(row.id)
-  ElMessage.success(t('articleManage.deleteSuccess'))
-  // 如果当前页数据全部删除，且不是第一页，则回到上一页
-  if (articleList.value.length === 1 && params.value.pagenum > 1) {
-    params.value.pagenum--
+  try {
+    await ElMessageBox.confirm(t('articleManage.deleteConfirm'), t('articleManage.deleteTitle'), {
+      confirmButtonText: t('common.confirm'),
+      cancelButtonText: t('common.cancel'),
+      type: 'warning',
+    })
+    await artDelService(row.id)
+    ElMessage.success(t('articleManage.deleteSuccess'))
+    // 如果当前页数据全部删除，且不是第一页，则回到上一页
+    if (articleList.value.length === 1 && params.value.pagenum > 1) {
+      params.value.pagenum--
+    }
+    getArticleList()
+  } catch (error) {
+    // 用户取消删除操作，不需要处理
   }
-  getArticleList()
 }
+
 const onSuccess = (type) => {
   // 如果是添加操作，跳转到最后一页
   if (type === 'add') {
@@ -172,237 +196,259 @@ const onSuccess = (type) => {
 </script>
 
 <template>
-  <page-container :title="t('articleManage.pageTitle')">
-    <template #extra>
-      <div style="display: flex; align-items: center">
-        <div class="search-container">
-          <div class="search-input-group">
-            <el-input
-              ref="searchInputRef"
-              v-model="searchText"
-              :placeholder="t('articleManage.searchPlaceholder')"
-              :prefix-icon="Search"
-              style="width: 250px"
-              @focus="onSearchFocus"
-              @blur="onSearchBlur"
-              @keyup="onSearchKeyup"
-            />
-            <el-button
-              type="primary"
-              @click="handleSearch"
-              style="margin-left: 0"
-              class="search-btn"
-              >{{ t('common.search') }}</el-button
-            >
-          </div>
+  <div class="article-manage">
+    <page-container :title="t('articleManage.pageTitle')">
+      <div v-if="loading">
+        <ArticleListSkeleton />
+      </div>
 
-          <div
-            v-show="showSearchHistory && searchHistory.length > 0"
-            class="search-history-dropdown"
-            @mousedown.prevent
-          >
-            <div class="search-history-header">
-              <span class="history-title">
-                <el-icon><Clock /></el-icon>
-                {{ t('articleChannel.searchHistory') }}
-              </span>
+      <div v-else class="content-wrapper">
+        <div class="header-actions">
+          <div class="search-container">
+            <div class="search-input-group">
+              <el-input
+                ref="searchInputRef"
+                v-model="searchText"
+                :placeholder="t('articleManage.searchPlaceholder')"
+                :prefix-icon="Search"
+                style="width: 250px"
+                @focus="onSearchFocus"
+                @blur="onSearchBlur"
+                @keyup="onSearchKeyup"
+              />
               <el-button
-                type="text"
-                size="small"
-                @click="clearSearchHistory"
-                class="clear-history-btn"
-                >{{ t('articleChannel.clear') }}</el-button
-              >
+                type="primary"
+                @click="handleSearch"
+                class="search-btn"
+              >{{ t('common.search') }}</el-button>
             </div>
-            <div class="search-history-list">
-              <div
-                v-for="(item, index) in searchHistory"
-                :key="index"
-                class="history-item"
-                @click="onHistoryItemClick(item)"
-              >
-                <span class="history-text">{{ item }}</span>
-                <el-icon class="delete-icon" @click="removeSearchHistoryItem(index, $event)"
-                  ><Delete
-                /></el-icon>
+
+            <div
+              v-show="showSearchHistory && searchHistory.length > 0"
+              class="search-history-dropdown"
+              @mousedown.prevent
+            >
+              <div class="search-history-header">
+                <span class="history-title">
+                  <el-icon><Clock /></el-icon>
+                  {{ t('articleChannel.searchHistory') }}
+                </span>
+                <el-button
+                  type="text"
+                  size="small"
+                  @click="clearSearchHistory"
+                  class="clear-history-btn"
+                >{{ t('articleChannel.clear') }}</el-button>
+              </div>
+              <div class="search-history-list">
+                <div
+                  v-for="(item, index) in searchHistory"
+                  :key="index"
+                  class="history-item"
+                  @click="onHistoryItemClick(item)"
+                >
+                  <span class="history-text">{{ item }}</span>
+                  <el-icon
+                    class="delete-icon"
+                    @click.stop="removeSearchHistoryItem(index, $event)"
+                  ><Delete /></el-icon>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        <el-button type="primary" @click="onAddArticle" style="margin-left: 10px">{{
-          t('articleManage.addArticle')
-        }}</el-button>
-      </div>
-    </template>
 
-    <el-form inline>
-      <el-form-item :label="t('articleManage.articleCategory')">
-        <channel-select v-model="params.cate_id"></channel-select>
-      </el-form-item>
-      <el-form-item :label="t('articleManage.publishStatus')">
-        <el-select v-model="params.state">
-          <el-option :label="t('articleManage.published')" value="已发布"></el-option>
-          <el-option :label="t('articleManage.draft')" value="草稿"></el-option>
-        </el-select>
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="onSearch" type="primary">{{ t('common.search') }}</el-button>
-        <el-button @click="onReset">{{ t('common.reset') }}</el-button>
-      </el-form-item>
-    </el-form>
-
-    <el-table :data="filteredArticleList" v-loading="loading">
-      <el-table-column :label="t('articleManage.articleTitle')" prop="title">
-        <template #default="{ row }">
-          <el-link type="primary" :underline="false">{{ row.title }}</el-link>
-        </template>
-      </el-table-column>
-      <el-table-column :label="t('articleManage.category')" prop="cate_name"></el-table-column>
-      <el-table-column :label="t('articleManage.publishTime')" prop="pub_date">
-        <template #default="{ row }">
-          {{ formatTime(row.pub_date) }}
-        </template>
-      </el-table-column>
-      <el-table-column :label="t('articleManage.status')" prop="state"></el-table-column>
-      <el-table-column :label="t('articleManage.operation')" width="150">
-        <template #default="{ row }">
           <el-button
-            :icon="Edit"
-            circle
-            plain
             type="primary"
-            @click="onEditArticle(row)"
-          ></el-button>
-          <el-button
-            :icon="Delete"
-            circle
-            plain
-            type="danger"
-            @click="onDeleteArticle(row)"
-          ></el-button>
-        </template>
-      </el-table-column>
+            @click="onAddArticle"
+          >{{ t('articleManage.addArticle') }}</el-button>
+        </div>
 
-      <template #empty>
-        <el-empty :description="t('articleManage.noData')"></el-empty>
-      </template>
-    </el-table>
+        <div class="filter-form">
+          <el-form inline>
+            <el-form-item :label="t('articleManage.articleCategory')">
+              <channel-select v-model="params.cate_id" />
+            </el-form-item>
+            <el-form-item :label="t('articleManage.publishStatus')">
+              <el-select v-model="params.state">
+                <el-option :label="t('articleManage.published')" value="已发布" />
+                <el-option :label="t('articleManage.draft')" value="草稿" />
+              </el-select>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="onSearch">{{ t('common.search') }}</el-button>
+              <el-button @click="onReset">{{ t('common.reset') }}</el-button>
+            </el-form-item>
+          </el-form>
+        </div>
 
-    <el-pagination
-      v-model:current-page="params.pagenum"
-      v-model:page-size="params.pagesize"
-      :page-sizes="[2, 3, 5, 10]"
-      :background="true"
-      layout="total, sizes, prev, pager, next, jumper"
-      :total="total"
-      @size-change="onSizeChange"
-      @current-change="onCurrentChange"
-      :small="true"
-      :disabled="loading"
-    >
-      <template #default>
-        <span>{{ t('articleManage.goTo') }} {{ params.pagenum }}</span>
-        <span>{{ t('articleManage.total') }} {{ total }} {{ t('articleManage.page') }}</span>
-      </template>
-    </el-pagination>
+        <div class="article-table">
+          <el-table :data="filteredArticleList">
+            <el-table-column :label="t('articleManage.articleTitle')" prop="title">
+              <template #default="{ row }">
+                <el-link type="primary" :underline="false">{{ row.title }}</el-link>
+              </template>
+            </el-table-column>
+            <el-table-column :label="t('articleManage.category')" prop="cate_name" />
+            <el-table-column :label="t('articleManage.publishTime')" prop="pub_date">
+              <template #default="{ row }">
+                {{ formatTime(row.pub_date) }}
+              </template>
+            </el-table-column>
+            <el-table-column :label="t('articleManage.status')" prop="state" />
+            <el-table-column :label="t('articleManage.operation')" width="150">
+              <template #default="{ row }">
+                <el-button
+                  :icon="Edit"
+                  circle
+                  plain
+                  type="primary"
+                  @click="onEditArticle(row)"
+                />
+                <el-button
+                  :icon="Delete"
+                  circle
+                  plain
+                  type="danger"
+                  @click="onDeleteArticle(row)"
+                />
+              </template>
+            </el-table-column>
 
-    <ArticleEdit ref="articleEditRef" @success="onSuccess"></ArticleEdit>
-  </page-container>
+            <template #empty>
+              <el-empty :description="t('articleManage.noData')" />
+            </template>
+          </el-table>
+        </div>
+
+        <div class="pagination-wrapper">
+          <el-pagination
+            v-model:current-page="params.pagenum"
+            v-model:page-size="params.pagesize"
+            :page-sizes="[2, 3, 5, 10]"
+            :background="true"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="total"
+            @size-change="onSizeChange"
+            @current-change="onCurrentChange"
+            :small="true"
+            :disabled="loading"
+          >
+            <template #default>
+              <span>{{ t('articleManage.goTo') }} {{ params.pagenum }}</span>
+              <span>{{ t('articleManage.total') }} {{ total }} {{ t('articleManage.page') }}</span>
+            </template>
+          </el-pagination>
+        </div>
+
+        <ArticleEdit ref="articleEditRef" @success="onSuccess" />
+      </div>
+    </page-container>
+  </div>
 </template>
 
 <style lang="scss" scoped>
-.page-container {
-  min-height: 100%;
-  box-sizing: border-box;
-  padding: 20px;
-  background-color: var(--page-container-bg-color);
-  border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-  transition: var(--theme-transition);
-  color: var(--text-color-primary);
-}
+.article-manage {
+  .content-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
 
-.search-container {
-  position: relative;
-  display: inline-block;
-  margin-right: 10px;
-}
+  .header-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+  }
 
-.search-input-group {
-  display: flex;
-  align-items: center;
-}
+  .search-container {
+    position: relative;
+    display: inline-block;
+  }
 
-.search-btn {
-  margin-left: 10px !important; // 确保覆盖 Element Plus 默认样式
-}
+  .search-input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
 
-.search-history-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 250px;
-  background-color: var(--el-bg-color);
-  border: 1px solid var(--el-border-color);
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  z-index: 100;
-  padding: 8px 0;
-  color: var(--el-text-color-primary);
-}
+  .search-history-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 250px;
+    background-color: var(--el-bg-color);
+    border: 1px solid var(--el-border-color);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+    padding: 8px 0;
+    margin-top: 5px;
+  }
 
-.search-history-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 4px 12px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-  margin-bottom: 5px;
-}
+  .search-history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 12px;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+    margin-bottom: 5px;
+  }
 
-.history-title {
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
+  .history-title {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: bold;
+  }
 
-.clear-history-btn {
-  color: var(--el-color-primary);
-}
+  .search-history-list {
+    max-height: 200px;
+    overflow-y: auto;
+  }
 
-.search-history-list {
-  max-height: 200px;
-  overflow-y: auto;
-}
+  .history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 12px;
+    cursor: pointer;
 
-.history-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 12px;
-  cursor: pointer;
-}
+    &:hover {
+      background-color: var(--el-fill-color-light);
 
-.history-item:hover {
-  background-color: var(--el-fill-color-light);
-}
+      .delete-icon {
+        visibility: visible;
+      }
+    }
+  }
 
-.history-text {
-  flex-grow: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+  .history-text {
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
-.delete-icon {
-  margin-left: 10px;
-  color: var(--el-text-color-secondary);
-  visibility: hidden; // 默认隐藏
-}
+  .delete-icon {
+    visibility: hidden;
+    margin-left: 10px;
+    color: var(--el-text-color-secondary);
+    cursor: pointer;
 
-.history-item:hover .delete-icon {
-  visibility: visible; // 悬停时显示
+    &:hover {
+      color: var(--el-color-primary);
+    }
+  }
+
+  .filter-form {
+    margin: 20px 0;
+  }
+
+  .pagination-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
 }
 </style>
-
