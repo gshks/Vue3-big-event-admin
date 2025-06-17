@@ -49,12 +49,12 @@ export default {
     },
   },
   layout: {
-    company: '黑马程序员',
+    company: '用户',
     switchToDark: '切换到暗色模式',
     switchToLight: '切换到亮色模式',
     logoutConfirm: '你确认要进行退出么',
     logoutTitle: '温馨提示',
-    footer: '大事件 ©2023 Created by 黑马程序员',
+    footer: '大事件 Created by 用户',
   },
   articleChannel: {
     pageTitle: '文章分类',
