@@ -38,6 +38,7 @@ const getArticleList = async () => {
     articleList.value = res.data.data
     total.value = res.data.total
   } catch (error) {
+    // eslint-disable-line no-unused-vars
     ElMessage.error(t('common.fetchError'))
   } finally {
     loading.value = false
@@ -181,6 +182,7 @@ const onDeleteArticle = async (row) => {
     }
     getArticleList()
   } catch (error) {
+    // eslint-disable-line no-unused-vars
     // 用户取消删除操作，不需要处理
   }
 }
@@ -203,68 +205,9 @@ const onSuccess = (type) => {
       </div>
 
       <div v-else class="content-wrapper">
-        <div class="header-actions">
-          <div class="search-container">
-            <div class="search-input-group">
-              <el-input
-                ref="searchInputRef"
-                v-model="searchText"
-                :placeholder="t('articleManage.searchPlaceholder')"
-                :prefix-icon="Search"
-                style="width: 250px"
-                @focus="onSearchFocus"
-                @blur="onSearchBlur"
-                @keyup="onSearchKeyup"
-              />
-              <el-button
-                type="primary"
-                @click="handleSearch"
-                class="search-btn"
-              >{{ t('common.search') }}</el-button>
-            </div>
-
-            <div
-              v-show="showSearchHistory && searchHistory.length > 0"
-              class="search-history-dropdown"
-              @mousedown.prevent
-            >
-              <div class="search-history-header">
-                <span class="history-title">
-                  <el-icon><Clock /></el-icon>
-                  {{ t('articleChannel.searchHistory') }}
-                </span>
-                <el-button
-                  type="text"
-                  size="small"
-                  @click="clearSearchHistory"
-                  class="clear-history-btn"
-                >{{ t('articleChannel.clear') }}</el-button>
-              </div>
-              <div class="search-history-list">
-                <div
-                  v-for="(item, index) in searchHistory"
-                  :key="index"
-                  class="history-item"
-                  @click="onHistoryItemClick(item)"
-                >
-                  <span class="history-text">{{ item }}</span>
-                  <el-icon
-                    class="delete-icon"
-                    @click.stop="removeSearchHistoryItem(index, $event)"
-                  ><Delete /></el-icon>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <el-button
-            type="primary"
-            @click="onAddArticle"
-          >{{ t('articleManage.addArticle') }}</el-button>
-        </div>
-
-        <div class="filter-form">
-          <el-form inline>
+        <!-- 合并到一行的筛选和操作区域 -->
+        <div class="unified-header">
+          <el-form inline class="filter-form">
             <el-form-item :label="t('articleManage.articleCategory')">
               <channel-select v-model="params.cate_id" />
             </el-form-item>
@@ -279,6 +222,65 @@ const onSuccess = (type) => {
               <el-button @click="onReset">{{ t('common.reset') }}</el-button>
             </el-form-item>
           </el-form>
+
+          <div class="right-actions">
+            <div class="search-container">
+              <div class="search-input-group">
+                <el-input
+                  ref="searchInputRef"
+                  v-model="searchText"
+                  :placeholder="t('articleManage.searchPlaceholder')"
+                  :prefix-icon="Search"
+                  style="width: 250px"
+                  @focus="onSearchFocus"
+                  @blur="onSearchBlur"
+                  @keyup="onSearchKeyup"
+                />
+                <el-button type="primary" @click="handleSearch" class="search-btn">{{
+                  t('common.search')
+                }}</el-button>
+              </div>
+
+              <div
+                v-show="showSearchHistory && searchHistory.length > 0"
+                class="search-history-dropdown"
+                @mousedown.prevent
+              >
+                <div class="search-history-header">
+                  <span class="history-title">
+                    <el-icon><Clock /></el-icon>
+                    {{ t('articleChannel.searchHistory') }}
+                  </span>
+                  <el-button
+                    type="text"
+                    size="small"
+                    @click="clearSearchHistory"
+                    class="clear-history-btn"
+                    >{{ t('articleChannel.clear') }}</el-button
+                  >
+                </div>
+                <div class="search-history-list">
+                  <div
+                    v-for="(item, index) in searchHistory"
+                    :key="index"
+                    class="history-item"
+                    @click="onHistoryItemClick(item)"
+                  >
+                    <span class="history-text">{{ item }}</span>
+                    <el-icon
+                      class="delete-icon"
+                      @click.stop="removeSearchHistoryItem(index, $event)"
+                      ><Delete
+                    /></el-icon>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <el-button type="primary" @click="onAddArticle">{{
+              t('articleManage.addArticle')
+            }}</el-button>
+          </div>
         </div>
 
         <div class="article-table">
@@ -297,13 +299,7 @@ const onSuccess = (type) => {
             <el-table-column :label="t('articleManage.status')" prop="state" />
             <el-table-column :label="t('articleManage.operation')" width="150">
               <template #default="{ row }">
-                <el-button
-                  :icon="Edit"
-                  circle
-                  plain
-                  type="primary"
-                  @click="onEditArticle(row)"
-                />
+                <el-button :icon="Edit" circle plain type="primary" @click="onEditArticle(row)" />
                 <el-button
                   :icon="Delete"
                   circle
@@ -354,11 +350,31 @@ const onSuccess = (type) => {
     gap: 20px;
   }
 
-  .header-actions {
+  // 统一的头部区域，包含筛选和操作
+  .unified-header {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .filter-form {
+    flex: 1;
+    margin: 0;
+
+    // 确保表单项在一行内显示
+    .el-form-item {
+      margin-bottom: 0;
+      margin-right: 20px;
+    }
+  }
+
+  .right-actions {
+    display: flex;
     align-items: center;
     gap: 10px;
+    flex-shrink: 0;
   }
 
   .search-container {
@@ -441,14 +457,22 @@ const onSuccess = (type) => {
     }
   }
 
-  .filter-form {
-    margin: 20px 0;
-  }
-
   .pagination-wrapper {
     display: flex;
     justify-content: flex-end;
     margin-top: 20px;
+  }
+
+  // 响应式处理
+  @media (max-width: 1200px) {
+    .unified-header {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .right-actions {
+      justify-content: flex-end;
+    }
   }
 }
 </style>
